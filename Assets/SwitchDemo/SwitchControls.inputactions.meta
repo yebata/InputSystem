@@ -6,6 +6,7 @@ ScriptedImporter:
     11400002: gameplay/attitude
     11400004: gameplay/acceleration
     11400006: gameplay/velocity
+    11400008: gameplay/gyro
   externalObjects: {}
   userData: 
   assetBundleName: 

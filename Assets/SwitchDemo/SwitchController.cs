@@ -1,11 +1,9 @@
 using System.Collections;
-using UnityEngine.Experimental.Input.Modifiers;
 using UnityEngine;
+using UnityEngine.Experimental.Input;
+using UnityEngine.Experimental.Input.Interactions;
 using UnityEngine.Experimental.Input.Plugins.Switch;
 using UnityEngine.UI;
-
-////TODO: transform from using action callbacks to using events
-////TODO: transform previous form that went to 'onEvent' to consuming events in bulk
 
 public class SwitchController : MonoBehaviour
 {
@@ -25,15 +23,32 @@ public class SwitchController : MonoBehaviour
 
     public Text message;
 
+    private bool m_IsGyroEnabled = false;
+
     private Quaternion m_Attitude;
     private Vector3 m_Acceleration;
     private Vector3 m_Velocity;
 
     public void Awake()
     {
-        controls.gameplay.attitude.performed += ctx => m_Attitude = ctx.GetValue<Quaternion>();
-        controls.gameplay.velocity.performed += ctx => m_Velocity = ctx.GetValue<Vector3>();
-        controls.gameplay.acceleration.performed += ctx => m_Acceleration = ctx.GetValue<Vector3>();
+        controls.gameplay.attitude.performed += ctx => m_Attitude = ctx.ReadValue<Quaternion>();
+        controls.gameplay.velocity.performed += ctx => m_Velocity = ctx.ReadValue<Vector3>();
+        controls.gameplay.acceleration.performed += ctx => m_Acceleration = ctx.ReadValue<Vector3>();
+
+        controls.gameplay.gyro.performed += ctx =>
+        {
+            NPad npad = ctx.control.device as NPad;
+
+            if (npad != null)
+            {
+                if (m_IsGyroEnabled)
+                    npad.StopSixAxisSensor();
+                else
+                    npad.StartSixAxisSensor();
+
+                m_IsGyroEnabled = !m_IsGyroEnabled;
+            }
+        };
     }
 
     public void OnEnable()
