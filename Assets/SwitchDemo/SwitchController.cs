@@ -85,11 +85,11 @@ public class SwitchController : MonoBehaviour
         {
             NPad current = gamepad as NPad;
 
-            if (current != null && (current.npadID != NPad.NpadId.Debug))
+            if (current != null && (current.npadId != NPad.NpadId.Debug))
             {
                 message.text = string.Format(
-                    "NPadID: {0}, Orientation: {1}, Style: {2}\nColor(L): {3}/{4}, Color(R): {5}/{6}",
-                    current.npadID, current.orientation, current.styleMask,
+                    "UserID: {0}, NPadID: {1}, Orientation: {2}, Style: {3}\nColor(L): {4}/{5}, Color(R): {6}/{7}",
+                    current.userId, current.npadId, current.orientation, current.styleMask,
                     current.leftControllerColor.Main, current.leftControllerColor.Sub, current.rightControllerColor.Main, current.rightControllerColor.Sub);
             }
         }
