@@ -409,9 +409,14 @@ namespace UnityEngine.Experimental.Input
             get { return m_StateFormat; }
         }
 
-        public string extendsLayout
+        public IEnumerable<InternedString> baseLayouts
         {
-            get { return m_ExtendsLayout; }
+            get { return m_BaseLayouts; }
+        }
+
+        public IEnumerable<InternedString> appliedOverrides
+        {
+            get { return m_AppliedOverrides; }
         }
 
         public ReadOnlyArray<InternedString> commonUsages
@@ -419,14 +424,14 @@ namespace UnityEngine.Experimental.Input
             get { return new ReadOnlyArray<InternedString>(m_CommonUsages); }
         }
 
-        public InputDeviceMatcher deviceMatcher
-        {
-            get { return m_DeviceMatcher; }
-        }
-
         public ReadOnlyArray<ControlItem> controls
         {
             get { return new ReadOnlyArray<ControlItem>(m_Controls); }
+        }
+
+        public InputDeviceMatcher deviceMatcher
+        {
+            get { return m_DeviceMatcher; }
         }
 
         public bool isDeviceLayout
@@ -476,6 +481,11 @@ namespace UnityEngine.Experimental.Input
             private int m_ControlCount;
             private ControlItem[] m_Controls;
 
+            public ReadOnlyArray<ControlItem> controls
+            {
+                get { return new ReadOnlyArray<ControlItem>(m_Controls, 0, m_ControlCount);}
+            }
+
             public struct ControlBuilder
             {
                 internal Builder builder;
@@ -502,15 +512,21 @@ namespace UnityEngine.Experimental.Input
                     return WithFormat(new FourCC(format));
                 }
 
-                public ControlBuilder WithOffset(uint offset)
+                public ControlBuilder WithByteOffset(uint offset)
                 {
                     controls[index].offset = offset;
                     return this;
                 }
 
-                public ControlBuilder WithBit(uint bit)
+                public ControlBuilder WithBitOffset(uint bit)
                 {
                     controls[index].bit = bit;
+                    return this;
+                }
+
+                public ControlBuilder WithSizeInBits(uint sizeInBits)
+                {
+                    controls[index].sizeInBits = sizeInBits;
                     return this;
                 }
 
@@ -547,6 +563,18 @@ namespace UnityEngine.Experimental.Input
                     return this;
                 }
 
+                public ControlBuilder WithDefaultState(PrimitiveValue value)
+                {
+                    controls[index].defaultState = new PrimitiveValueOrArray(value);
+                    return this;
+                }
+
+                public ControlBuilder WithDefaultState(PrimitiveValueOrArray value)
+                {
+                    controls[index].defaultState = value;
+                    return this;
+                }
+
                 public ControlBuilder AsArrayOfControlsWithSize(int arraySize)
                 {
                     controls[index].arraySize = arraySize;
@@ -572,7 +600,11 @@ namespace UnityEngine.Experimental.Input
                     throw new ArgumentException(name);
 
                 var index = ArrayHelpers.AppendWithCapacity(ref m_Controls, ref m_ControlCount,
-                    new ControlItem {name = new InternedString(name)});
+                    new ControlItem
+                    {
+                        name = new InternedString(name),
+                        isModifyingChildControlByPath = name.IndexOf('/') != -1,
+                    });
 
                 return new ControlBuilder
                 {
@@ -634,7 +666,7 @@ namespace UnityEngine.Experimental.Input
                         type == null && string.IsNullOrEmpty(extendsLayout) ? typeof(InputDevice) : type)
                 {
                     m_StateFormat = stateFormat,
-                    m_ExtendsLayout = new InternedString(extendsLayout),
+                    m_BaseLayouts = new InlinedArray<InternedString>(new InternedString(extendsLayout)),
                     m_DeviceMatcher = deviceMatcher,
                     m_Controls = controls,
                     m_UpdateBeforeRender = updateBeforeRender
@@ -717,10 +749,8 @@ namespace UnityEngine.Experimental.Input
         internal FourCC m_StateFormat;
         internal int m_StateSizeInBytes; // Note that this is the combined state size for input and output.
         internal bool? m_UpdateBeforeRender;
-        private InternedString m_ExtendsLayout;
-#pragma warning disable 0414
-        private InternedString[] m_OverridesLayouts; ////TODO
-#pragma warning restore 0414
+        internal InlinedArray<InternedString> m_BaseLayouts;
+        private InlinedArray<InternedString> m_AppliedOverrides;
         private InternedString[] m_CommonUsages;
         internal ControlItem[] m_Controls;
         private InputDeviceMatcher m_DeviceMatcher;
@@ -981,50 +1011,61 @@ namespace UnityEngine.Experimental.Input
             var textLength = text.Length;
 
             while (index < textLength)
-            {
-                // Skip whitespace.
-                while (index < textLength && char.IsWhiteSpace(text[index]))
-                    ++index;
-
-                // Parse name.
-                var nameStart = index;
-                while (index < textLength)
-                {
-                    var nextChar = text[index];
-                    if (nextChar == '(' || nextChar == ',' || char.IsWhiteSpace(nextChar))
-                        break;
-                    ++index;
-                }
-                if (index - nameStart == 0)
-                    throw new Exception(string.Format("Expecting name at position {0} in '{1}'", nameStart, text));
-                var name = text.Substring(nameStart, index - nameStart);
-
-                // Skip whitespace.
-                while (index < textLength && char.IsWhiteSpace(text[index]))
-                    ++index;
-
-                // Parse parameters.
-                ParameterValue[] parameters = null;
-                if (index < textLength && text[index] == '(')
-                {
-                    ++index;
-                    var closeParenIndex = text.IndexOf(')', index);
-                    if (closeParenIndex == -1)
-                        throw new Exception(string.Format("Expecting ')' after '(' at position {0} in '{1}'", index,
-                            text));
-
-                    var parameterString = text.Substring(index, closeParenIndex - index);
-                    parameters = ParseParameters(parameterString);
-                    index = closeParenIndex + 1;
-                }
-
-                if (index < textLength && text[index] == ',')
-                    ++index;
-
-                list.Add(new NameAndParameters { name = name, parameters = new ReadOnlyArray<ParameterValue>(parameters) });
-            }
+                list.Add(ParseNameAndParameters(text, ref index));
 
             return true;
+        }
+
+        internal static NameAndParameters ParseNameAndParameters(string text)
+        {
+            var index = 0;
+            return ParseNameAndParameters(text, ref index);
+        }
+
+        private static NameAndParameters ParseNameAndParameters(string text, ref int index)
+        {
+            var textLength = text.Length;
+
+            // Skip whitespace.
+            while (index < textLength && char.IsWhiteSpace(text[index]))
+                ++index;
+
+            // Parse name.
+            var nameStart = index;
+            while (index < textLength)
+            {
+                var nextChar = text[index];
+                if (nextChar == '(' || nextChar == ',' || char.IsWhiteSpace(nextChar))
+                    break;
+                ++index;
+            }
+            if (index - nameStart == 0)
+                throw new Exception(string.Format("Expecting name at position {0} in '{1}'", nameStart, text));
+            var name = text.Substring(nameStart, index - nameStart);
+
+            // Skip whitespace.
+            while (index < textLength && char.IsWhiteSpace(text[index]))
+                ++index;
+
+            // Parse parameters.
+            ParameterValue[] parameters = null;
+            if (index < textLength && text[index] == '(')
+            {
+                ++index;
+                var closeParenIndex = text.IndexOf(')', index);
+                if (closeParenIndex == -1)
+                    throw new Exception(string.Format("Expecting ')' after '(' at position {0} in '{1}'", index,
+                        text));
+
+                var parameterString = text.Substring(index, closeParenIndex - index);
+                parameters = ParseParameters(parameterString);
+                index = closeParenIndex + 1;
+            }
+
+            if (index < textLength && text[index] == ',')
+                ++index;
+
+            return new NameAndParameters {name = name, parameters = new ReadOnlyArray<ParameterValue>(parameters)};
         }
 
         private static ParameterValue[] ParseParameters(string parameterString)
@@ -1355,19 +1396,28 @@ namespace UnityEngine.Experimental.Input
                     throw new Exception(string.Format("Duplicate control '{0}' in layout '{1}'", name, layoutName));
         }
 
-        internal static string ParseHeaderFromJson(string json, out InputDeviceMatcher deviceMatcher, out string baseLayout)
+        internal static void ParseHeaderFieldsFromJson(string json, out InternedString name,
+            out InlinedArray<InternedString> baseLayouts, out InputDeviceMatcher deviceMatcher)
         {
-            var layoutJson = JsonUtility.FromJson<LayoutJsonNameAndDescriptorOnly>(json);
-            deviceMatcher = layoutJson.device.ToMatcher();
-            baseLayout = layoutJson.extend;
-            return layoutJson.name;
+            var header = JsonUtility.FromJson<LayoutJsonNameAndDescriptorOnly>(json);
+            name = new InternedString(header.name);
+
+            baseLayouts = new InlinedArray<InternedString>();
+            if (!string.IsNullOrEmpty(header.extend))
+                baseLayouts.Append(new InternedString(header.extend));
+            if (header.extendMultiple != null)
+                foreach (var item in header.extendMultiple)
+                    baseLayouts.Append(new InternedString(item));
+
+            deviceMatcher = header.device.ToMatcher();
         }
 
         [Serializable]
-        private struct LayoutJsonNameAndDescriptorOnly
+        internal struct LayoutJsonNameAndDescriptorOnly
         {
             public string name;
             public string extend;
+            public string[] extendMultiple;
             public InputDeviceMatcher.MatcherJson device;
         }
 
@@ -1381,8 +1431,7 @@ namespace UnityEngine.Experimental.Input
 
             public string name;
             public string extend;
-            public string @override; // Convenience to not have to create array for single override.
-            public string[] overrides;
+            public string[] extendMultiple;
             public string format;
             public string beforeRender; // Can't be simple bool as otherwise we can't tell whether it was set or not.
             public string[] commonUsages;
@@ -1424,7 +1473,6 @@ namespace UnityEngine.Experimental.Input
 
                 // Create layout.
                 var layout = new InputControlLayout(name, type);
-                layout.m_ExtendsLayout = new InternedString(extend);
                 layout.m_DeviceMatcher = device.ToMatcher();
                 layout.m_DisplayName = displayName;
                 layout.m_ResourceName = resourceName;
@@ -1432,6 +1480,14 @@ namespace UnityEngine.Experimental.Input
                 if (!string.IsNullOrEmpty(format))
                     layout.m_StateFormat = new FourCC(format);
 
+                // Base layout.
+                if (!string.IsNullOrEmpty(extend))
+                    layout.m_BaseLayouts.Append(new InternedString(extend));
+                if (extendMultiple != null)
+                    foreach (var element in extendMultiple)
+                        layout.m_BaseLayouts.Append(new InternedString(element));
+
+                // Before render behavior.
                 if (!string.IsNullOrEmpty(beforeRender))
                 {
                     var beforeRenderLowerCase = beforeRender.ToLower();
@@ -1445,20 +1501,7 @@ namespace UnityEngine.Experimental.Input
 
                 // Add common usages.
                 if (commonUsages != null)
-                {
                     layout.m_CommonUsages = ArrayHelpers.Select(commonUsages, x => new InternedString(x));
-                }
-
-                // Add overrides.
-                if (!string.IsNullOrEmpty(@override) || overrides != null)
-                {
-                    var names = new List<InternedString>();
-                    if (!string.IsNullOrEmpty(@override))
-                        names.Add(new InternedString(@override));
-                    if (overrides != null)
-                        names.AddRange(overrides.Select(x => new InternedString(x)));
-                    layout.m_OverridesLayouts = names.ToArray();
-                }
 
                 // Add controls.
                 if (controls != null)
@@ -1487,7 +1530,8 @@ namespace UnityEngine.Experimental.Input
                     variant = layout.m_Variants,
                     displayName = layout.m_DisplayName,
                     resourceName = layout.m_ResourceName,
-                    extend = layout.m_ExtendsLayout,
+                    extend = layout.m_BaseLayouts.length == 1 ? layout.m_BaseLayouts[0].ToString() : null,
+                    extendMultiple = layout.m_BaseLayouts.length > 1 ? layout.m_BaseLayouts.ToArray(x => x.ToString()) : null,
                     format = layout.stateFormat.ToString(),
                     device = InputDeviceMatcher.MatcherJson.FromMatcher(layout.m_DeviceMatcher),
                     controls = ControlItemJson.FromControlItems(layout.m_Controls),
@@ -1632,11 +1676,14 @@ namespace UnityEngine.Experimental.Input
 
         internal struct Collection
         {
+            public const float kBaseScoreForNonGeneratedLayouts = 1.0f;
+
             public Dictionary<InternedString, Type> layoutTypes;
             public Dictionary<InternedString, string> layoutStrings;
             public Dictionary<InternedString, BuilderInfo> layoutBuilders;
             public Dictionary<InternedString, InternedString> baseLayoutTable;
             public Dictionary<InternedString, InputDeviceMatcher> layoutDeviceMatchers;
+            public Dictionary<InternedString, InternedString[]> layoutOverrides;
 
             public void Allocate()
             {
@@ -1645,6 +1692,7 @@ namespace UnityEngine.Experimental.Input
                 layoutBuilders = new Dictionary<InternedString, BuilderInfo>();
                 baseLayoutTable = new Dictionary<InternedString, InternedString>();
                 layoutDeviceMatchers = new Dictionary<InternedString, InputDeviceMatcher>();
+                layoutOverrides = new Dictionary<InternedString, InternedString[]>();
             }
 
             public InternedString TryFindMatchingLayout(InputDeviceDescription deviceDescription)
@@ -1655,6 +1703,13 @@ namespace UnityEngine.Experimental.Input
                 foreach (var entry in layoutDeviceMatchers)
                 {
                     var score = entry.Value.MatchPercentage(deviceDescription);
+
+                    // We want auto-generated layouts to take a backseat compared to manually created
+                    // layouts. We do this by boosting the score of every layout that isn't coming from
+                    // a layout builder.
+                    if (score > 0 && !layoutBuilders.ContainsKey(entry.Key))
+                        score += kBaseScoreForNonGeneratedLayouts;
+
                     if (score > highestScore)
                     {
                         highestScore = score;
@@ -1673,16 +1728,6 @@ namespace UnityEngine.Experimental.Input
 
             private InputControlLayout TryLoadLayoutInternal(InternedString name)
             {
-                // Check builders.
-                BuilderInfo builder;
-                if (layoutBuilders.TryGetValue(name, out builder))
-                {
-                    var layout = (InputControlLayout)builder.method.Invoke(builder.instance, null);
-                    if (layout == null)
-                        throw new Exception(string.Format("Layout builder '{0}' returned null when invoked", name));
-                    return layout;
-                }
-
                 // See if we have a string layout for it. These
                 // always take precedence over ones from type so that we can
                 // override what's in the code using data.
@@ -1694,6 +1739,22 @@ namespace UnityEngine.Experimental.Input
                 Type type;
                 if (layoutTypes.TryGetValue(name, out type))
                     return FromType(name, type);
+
+                // Finally, check builders. Always the last ones to get a shot at
+                // providing layouts.
+                BuilderInfo builder;
+                if (layoutBuilders.TryGetValue(name, out builder))
+                {
+                    var layoutObject = builder.method.Invoke(builder.instance, null);
+                    if (layoutObject == null)
+                        throw new Exception(string.Format("Layout builder '{0}' returned null when invoked", name));
+                    var layout = layoutObject as InputControlLayout;
+                    if (layout == null)
+                        throw new Exception(string.Format(
+                            "Layout builder '{0}' returned '{1}' which is not an InputControlLayout", name,
+                            layoutObject));
+                    return layout;
+                }
 
                 return null;
             }
@@ -1710,18 +1771,35 @@ namespace UnityEngine.Experimental.Input
                     // If the layout extends another layout, we need to merge the
                     // base layout into the final layout.
                     // NOTE: We go through the baseLayoutTable here instead of looking at
-                    //       the extendsLayout property so as to make this work for all types
+                    //       the baseLayouts property so as to make this work for all types
                     //       of layouts (FromType() does not set the property, for example).
                     var baseLayoutName = new InternedString();
                     if (baseLayoutTable.TryGetValue(name, out baseLayoutName))
                     {
+                        Debug.Assert(!baseLayoutName.IsEmpty());
+
                         ////TODO: catch cycles
                         var baseLayout = TryLoadLayout(baseLayoutName, table);
                         if (baseLayout == null)
                             throw new LayoutNotFoundException(string.Format(
                                 "Cannot find base layout '{0}' of layout '{1}'", baseLayoutName, name));
                         layout.MergeLayout(baseLayout);
-                        layout.m_ExtendsLayout = baseLayoutName;
+
+                        if (layout.m_BaseLayouts.length == 0)
+                            layout.m_BaseLayouts.Append(baseLayoutName);
+                    }
+
+                    // If there's overrides for the layout, apply them now.
+                    InternedString[] overrides;
+                    if (layoutOverrides.TryGetValue(name, out overrides))
+                    {
+                        for (var i = 0; i < overrides.Length; ++i)
+                        {
+                            var overrideName = overrides[i];
+                            var overrideLayout = TryLoadLayout(overrideName, table);
+                            layout.MergeLayout(overrideLayout);
+                            layout.m_AppliedOverrides.Append(overrideName);
+                        }
                     }
 
                     // If the layout has an associated device matcher,

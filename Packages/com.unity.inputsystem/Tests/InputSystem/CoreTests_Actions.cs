@@ -508,6 +508,106 @@ partial class CoreTests
 
     [Test]
     [Category("Actions")]
+    public void Actions_CanPerformStickInteraction()
+    {
+        var gamepad = InputSystem.AddDevice<Gamepad>();
+
+        var performedReceivedCalls = 0;
+        var startedReceivedCalls = 0;
+        var cancelledReceivedCalls = 0;
+
+        var action = new InputAction(binding: "/<Gamepad>/leftStick", interactions: "stick");
+        action.performed +=
+            ctx => ++ performedReceivedCalls;
+        action.started +=
+            ctx => ++ startedReceivedCalls;
+        action.cancelled +=
+            ctx => ++ cancelledReceivedCalls;
+        action.Enable();
+
+        // Go out of deadzone.
+        InputSystem.QueueStateEvent(gamepad, new GamepadState {leftStick = new Vector2(0.345f, 0.456f)});
+        InputSystem.Update();
+
+        Assert.That(startedReceivedCalls, Is.EqualTo(1));
+        Assert.That(performedReceivedCalls, Is.Zero);
+        Assert.That(cancelledReceivedCalls, Is.Zero);
+
+        startedReceivedCalls = 0;
+        performedReceivedCalls = 0;
+        cancelledReceivedCalls = 0;
+
+        // Move around.
+        InputSystem.QueueStateEvent(gamepad, new GamepadState {leftStick = new Vector2(0.456f, 0.567f)});
+        InputSystem.Update();
+
+        Assert.That(startedReceivedCalls, Is.EqualTo(0));
+        Assert.That(performedReceivedCalls, Is.EqualTo(1));
+        Assert.That(cancelledReceivedCalls, Is.EqualTo(0));
+
+        startedReceivedCalls = 0;
+        performedReceivedCalls = 0;
+        cancelledReceivedCalls = 0;
+
+        // Move around some more.
+        InputSystem.QueueStateEvent(gamepad, new GamepadState {leftStick = new Vector2(0.789f, 0.765f)});
+        InputSystem.Update();
+
+        Assert.That(startedReceivedCalls, Is.EqualTo(0));
+        Assert.That(performedReceivedCalls, Is.EqualTo(1));
+        Assert.That(cancelledReceivedCalls, Is.EqualTo(0));
+
+        startedReceivedCalls = 0;
+        performedReceivedCalls = 0;
+        cancelledReceivedCalls = 0;
+
+        // Go back into deadzone.
+        InputSystem.QueueStateEvent(gamepad, new GamepadState {leftStick = new Vector2(0.011f, 0.011f)});
+        InputSystem.Update();
+
+        Assert.That(startedReceivedCalls, Is.EqualTo(0));
+        Assert.That(performedReceivedCalls, Is.EqualTo(0));
+        Assert.That(cancelledReceivedCalls, Is.EqualTo(1));
+
+        startedReceivedCalls = 0;
+        performedReceivedCalls = 0;
+        cancelledReceivedCalls = 0;
+
+        // Make sure nothing happens if we move around in deadzone.
+        InputSystem.QueueStateEvent(gamepad, new GamepadState {leftStick = new Vector2(0.012f, 0.012f)});
+        InputSystem.Update();
+
+        Assert.That(startedReceivedCalls, Is.EqualTo(0));
+        Assert.That(performedReceivedCalls, Is.EqualTo(0));
+        Assert.That(cancelledReceivedCalls, Is.EqualTo(0));
+    }
+
+    [Test]
+    [Category("Actions")]
+    public void Actions_CanPerformStickInteraction_OnDpadComposite()
+    {
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+
+        var action = new InputAction();
+        action.AppendCompositeBinding("dpad", interactions: "stick")
+            .With("up", "<Keyboard>/w")
+            .With("down", "<Keyboard>/s")
+            .With("left", "<Keyboard>/a")
+            .With("right", "<Keyboard>/d");
+
+        var startedReceivedCalls = 0;
+        action.started +=
+            ctx => ++ startedReceivedCalls;
+        action.Enable();
+
+        InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A, Key.W));
+        InputSystem.Update();
+
+        Assert.That(startedReceivedCalls, Is.EqualTo(1));
+    }
+
+    [Test]
+    [Category("Actions")]
     public void Actions_CanAddActionsToMap()
     {
         var map = new InputActionMap();
@@ -581,8 +681,10 @@ partial class CoreTests
     {
         var map = new InputActionMap("test");
 
-        map.AddAction(name: "action1", binding: "/gamepad/leftStick").AppendBinding("/gamepad/rightStick")
-            .WithGroup("group");
+        map.AddAction(name: "action1", expectedControlLayout: "Button", binding: "/gamepad/leftStick")
+            .AppendBinding("/gamepad/rightStick")
+            .WithGroup("group")
+            .WithProcessor("deadzone");
         map.AddAction(name: "action2", binding: "/gamepad/buttonSouth", interactions: "tap,slowTap(duration=0.1)");
 
         var json = map.ToJson();
@@ -593,13 +695,18 @@ partial class CoreTests
         Assert.That(maps[0].actions, Has.Count.EqualTo(2));
         Assert.That(maps[0].actions[0].name, Is.EqualTo("action1"));
         Assert.That(maps[0].actions[1].name, Is.EqualTo("action2"));
+        Assert.That(maps[0].actions[0].expectedControlLayout, Is.EqualTo("Button"));
+        Assert.That(maps[0].actions[1].expectedControlLayout, Is.Null);
         Assert.That(maps[0].actions[0].bindings, Has.Count.EqualTo(2));
         Assert.That(maps[0].actions[1].bindings, Has.Count.EqualTo(1));
         Assert.That(maps[0].actions[0].bindings[0].groups, Is.Null);
         Assert.That(maps[0].actions[0].bindings[1].groups, Is.EqualTo("group"));
+        Assert.That(maps[0].actions[0].bindings[0].processors, Is.Null);
+        Assert.That(maps[0].actions[0].bindings[1].processors, Is.EqualTo("deadzone"));
         Assert.That(maps[0].actions[0].bindings[0].interactions, Is.Null);
         Assert.That(maps[0].actions[0].bindings[1].interactions, Is.Null);
         Assert.That(maps[0].actions[1].bindings[0].groups, Is.Null);
+        Assert.That(maps[0].actions[1].bindings[0].processors, Is.Null);
         Assert.That(maps[0].actions[1].bindings[0].interactions, Is.EqualTo("tap,slowTap(duration=0.1)"));
         Assert.That(maps[0].actions[0].actionMap, Is.SameAs(maps[0]));
         Assert.That(maps[0].actions[1].actionMap, Is.SameAs(maps[0]));
@@ -1634,6 +1741,38 @@ partial class CoreTests
 
     [Test]
     [Category("Actions")]
+    public void Actions_CanDisableNormalizationOfDpadComposites()
+    {
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+
+        var action = new InputAction();
+        action.AppendCompositeBinding("Dpad(normalize=false)")
+            .With("Up", "/<Keyboard>/w")
+            .With("Down", "/<Keyboard>/s")
+            .With("Left", "/<Keyboard>/a")
+            .With("Right", "/<Keyboard>/d");
+        action.Enable();
+
+        Vector2? value = null;
+        action.performed += ctx => { value = ctx.ReadValue<Vector2>(); };
+
+        value = null;
+        InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.W, Key.A));
+        InputSystem.Update();
+
+        Assert.That(value, Is.Not.Null);
+        Assert.That(value.Value, Is.EqualTo(Vector2.up + Vector2.left).Using(vector2Comparer));
+    }
+
+    [Test]
+    [Category("Actions")]
+    public void TODO_Actions_CanSetGravityOnDpadComposites()
+    {
+        Assert.Fail();
+    }
+
+    [Test]
+    [Category("Actions")]
     public void TODO_Actions_WhenPartOfCompositeResolvesToMultipleControls_WhatHappensXXX()
     {
         Assert.Fail();
@@ -2040,6 +2179,28 @@ partial class CoreTests
         Assert.That(set.enabled, Is.False);
     }
 
+    [Test]
+    [Category("Actions")]
+    public void Actions_DisablingAllActions_RemovesAllTheirStateMonitors()
+    {
+        InputSystem.AddDevice<Gamepad>();
+
+        var action1 = new InputAction(binding: "/<Gamepad>/leftStick");
+        var action2 = new InputAction(binding: "/<Gamepad>/rightStick");
+        var action3 = new InputAction(binding: "/<Gamepad>/buttonSouth");
+
+        action1.Enable();
+        action2.Enable();
+        action3.Enable();
+
+        InputSystem.DisableAllEnabledActions();
+
+        // Not the most elegant test as we reach into internals here but with the
+        // current API, it's not possible to enumerate monitors from outside.
+        Assert.That(InputSystem.s_Manager.m_StateChangeMonitors,
+            Has.All.Matches((InputManager.StateChangeMonitorsForDevice x) => x.count == 0));
+    }
+
     // This test requires that pointer deltas correctly snap back to 0 when the pointer isn't moved.
     [Test]
     [Category("Actions")]
@@ -2237,6 +2398,69 @@ partial class CoreTests
 
         InputSystem.QueueStateEvent(gamepad, new GamepadState().WithButton(GamepadState.Button.South));
         InputSystem.Update();
+    }
+
+    class TestInteractionCheckingDefaultState : IInputInteraction
+    {
+        public void Process(ref InputInteractionContext context)
+        {
+            Debug.Log("TestInteractionCheckingDefaultState.Process");
+            Assert.That(context.controlHasDefaultValue);
+            Assert.That(context.control.ReadValueAsObject(), Is.EqualTo(0.1234).Within(0.00001));
+        }
+
+        public void Reset()
+        {
+        }
+    }
+
+    // Interactions can ask whether a trigger control is in its default state. This should respect
+    // custom default state values that may be specified on controls.
+    [Test]
+    [Category("Actions")]
+    public void Actions_InteractionContextRespectsCustomDefaultStates()
+    {
+        InputSystem.RegisterInteraction<TestInteractionCheckingDefaultState>();
+
+        const string json = @"
+            {
+                ""name"" : ""CustomGamepad"",
+                ""extend"" : ""Gamepad"",
+                ""controls"" : [
+                    { ""name"" : ""leftStick/x"", ""defaultState"" : ""0.1234"" }
+                ]
+            }
+        ";
+
+        // Create gamepad and put leftStick/x in non-default state.
+        InputSystem.RegisterControlLayout(json);
+        var gamepad = (Gamepad)InputSystem.AddDevice("CustomGamepad");
+        InputSystem.QueueStateEvent(gamepad, new GamepadState());
+        InputSystem.Update();
+
+        var action = new InputAction(binding: "/<Gamepad>/leftStick/x", interactions: "testInteractionCheckingDefaultState");
+        action.Enable();
+
+        LogAssert.Expect(LogType.Log, "TestInteractionCheckingDefaultState.Process");
+
+        InputSystem.QueueStateEvent(gamepad, new GamepadState {leftStick = new Vector2(0.1234f, 0f)});
+        InputSystem.Update();
+    }
+
+    // It's possible to associate a control layout name with an action. This is useful both for
+    // characterizing the expected input behavior as well as to make control picking (both at
+    // edit time and in the game) easier.
+    [Test]
+    [Category("Actions")]
+    public void Actions_CanHaveExpectedControlLayout()
+    {
+        var action = new InputAction();
+
+        Assert.That(action.expectedControlLayout, Is.Null);
+
+        action.expectedControlLayout = "Button";
+
+        Assert.That(action.expectedControlLayout, Is.EqualTo("Button"));
     }
 
     [Test]

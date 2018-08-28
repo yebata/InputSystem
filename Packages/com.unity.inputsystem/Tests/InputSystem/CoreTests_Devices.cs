@@ -13,6 +13,8 @@ using UnityEngine.Experimental.Input.Utilities;
 using UnityEngine.TestTools;
 using Gyroscope = UnityEngine.Experimental.Input.Gyroscope;
 
+////TODO: test that device re-creation doesn't lose flags and such
+
 partial class CoreTests
 {
     [Test]
@@ -1088,7 +1090,7 @@ partial class CoreTests
         InputSystem.QueueStateEvent(device, new MouseState {buttons = 0xffff});
         InputSystem.Update();
 
-        Assert.That(device.CheckStateIsAllZeros(), Is.True);
+        Assert.That(device.CheckStateIsAtDefault(), Is.True);
 
         // Re-enable device.
 
@@ -2748,5 +2750,57 @@ partial class CoreTests
         InputSystem.Update();
 
         Assert.That(device.onUpdateCallCount, Is.Zero);
+    }
+
+    [Test]
+    [Category("Devices")]
+    public void Devices_AreUpdatedWithTimestampOfLastEvent()
+    {
+        var device = InputSystem.AddDevice<Gamepad>();
+
+        testRuntime.currentTime = 1234;
+        testRuntime.currentTimeOffsetToRealtimeSinceStartup = 1123;
+
+        InputSystem.QueueStateEvent(device, new GamepadState());
+        InputSystem.Update();
+
+        // Externally visible time must be offset according to currentTimeOffsetToRealtimeSinceStartup.
+        // Internal time is not offset.
+        Assert.That(device.lastUpdateTime, Is.EqualTo(111).Within(0.00001));
+        Assert.That(device.m_LastUpdateTimeInternal, Is.EqualTo(1234).Within(0.00001));
+    }
+
+    [Test]
+    [Category("Devices")]
+    public void Devices_CanSetPollingFrequency()
+    {
+        InputSystem.pollingFrequency = 120;
+
+        Assert.That(testRuntime.pollingFrequency, Is.EqualTo(120).Within(0.000001));
+        Assert.That(InputSystem.pollingFrequency, Is.EqualTo(120).Within(0.000001));
+    }
+
+    [Test]
+    [Category("Devices")]
+    public void Devices_PollingFrequencyIs60HzByDefault()
+    {
+        Assert.That(InputSystem.pollingFrequency, Is.EqualTo(60).Within(0.000001));
+        // Make sure InputManager passed the frequency on to the runtime.
+        Assert.That(testRuntime.pollingFrequency, Is.EqualTo(60).Within(0.000001));
+    }
+
+    //This could be the first step towards being able to simulate input well.
+    [Test]
+    [Category("Devices")]
+    public void TODO_Devices_CanCreateVirtualDevices()
+    {
+        //layout has one or more binding paths on controls instead of associated memory
+        //sets up state monitors
+        //virtual device is of a device type determined by base template (e.g. Gamepad)
+        //can associate additional processing logic with controls
+        //state changes for virtual devices are accumulated as separate buffer of events that is flushed out in a post-step
+        //performed as a loop so virtual devices can feed into other virtual devices
+        //virtual devices are marked with flag
+        Assert.Fail();
     }
 }
