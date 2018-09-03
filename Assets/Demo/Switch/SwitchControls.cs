@@ -1,4 +1,4 @@
-// GENERATED AUTOMATICALLY FROM 'Assets/SwitchDemo/SwitchControls.inputactions'
+// GENERATED AUTOMATICALLY FROM 'Assets/Demo/Switch/SwitchControls.inputactions'
 
 [System.Serializable]
 public class SwitchControls : UnityEngine.Experimental.Input.InputActionWrapper
