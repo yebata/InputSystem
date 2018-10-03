@@ -7,6 +7,9 @@ ScriptedImporter:
     11400004: gameplay/acceleration
     11400006: gameplay/velocity
     11400008: gameplay/gyro
+    11400010: touchscreen/position
+    11400012: touchscreen/id
+    11400014: touchscreen/phase
   externalObjects: {}
   userData: 
   assetBundleName: 

@@ -11,6 +11,8 @@ public class SwitchController : MonoBehaviour
 
     float velocityScale = 2f;
 
+    public GameObject gyro;
+
     public GameObject velocityX;
     public GameObject velocityY;
     public GameObject velocityZ;
@@ -22,12 +24,20 @@ public class SwitchController : MonoBehaviour
     public GameObject accZ;
 
     public Text message;
+    public GameObject[] colorL;
+    public GameObject[] colorR;
+    public Image[] cursors;
+
 
     private bool m_IsGyroEnabled = false;
 
     private Quaternion m_Attitude;
     private Vector3 m_Acceleration;
     private Vector3 m_Velocity;
+
+    private int m_TouchID;
+    private PointerPhase m_TouchPhase;
+    private Vector2 m_TouchPosition;
 
     public void Awake()
     {
@@ -49,6 +59,12 @@ public class SwitchController : MonoBehaviour
                 m_IsGyroEnabled = !m_IsGyroEnabled;
             }
         };
+
+        controls.touchscreen.phase.performed += ctx =>
+        {
+            m_TouchPhase = ctx.ReadValue<PointerPhase>();
+        };
+        controls.touchscreen.position.performed += ctx => m_TouchPosition = ctx.ReadValue<Vector2>();
     }
 
     public void OnEnable()
@@ -67,7 +83,7 @@ public class SwitchController : MonoBehaviour
 
     public void Update()
     {
-        transform.localRotation = m_Attitude;
+        gyro.transform.localRotation = m_Attitude;
 
         velocityX.transform.localScale = Vector3.one + (Vector3.right * m_Velocity.x * velocityScale);
         velocityY.transform.localScale = Vector3.one + (Vector3.right * m_Velocity.y * velocityScale);
@@ -77,20 +93,106 @@ public class SwitchController : MonoBehaviour
         accY.transform.localScale = Vector3.one + (Vector3.right * m_Acceleration.y * accScale);
         accZ.transform.localScale = Vector3.one + (Vector3.right * m_Acceleration.z * accScale);
 
-        var all = NPad.all;
-
-        message.text = string.Empty;
-
-        foreach (var gamepad in all)
+        // Npads
         {
-            NPad current = gamepad as NPad;
+            var all = NPad.all;
 
-            if (current != null && (current.npadId != NPad.NpadId.Debug))
+            message.text = string.Empty;
+
+            foreach (var gamepad in all)
             {
-                message.text = string.Format(
-                    "UserID: {0}, NPadID: {1}, Orientation: {2}, Style: {3}\nColor(L): {4}/{5}, Color(R): {6}/{7}",
-                    current.userId, current.npadId, current.orientation, current.styleMask,
-                    current.leftControllerColor.Main, current.leftControllerColor.Sub, current.rightControllerColor.Main, current.rightControllerColor.Sub);
+                NPad current = gamepad as NPad;
+
+                if (current != null && (current.npadId != NPad.NpadId.Debug))
+                {
+                    message.text += string.Format(
+                        "ID: {0}, NPadID: {1}, Orientation: {2}, Style: {3}\n",
+                        current.id, current.npadId, current.orientation, current.styleMask);
+                }
+            }
+
+            if (all.Count > 0)
+            {
+                NPad current = all[0] as NPad;
+
+                if (NPad.current != null)
+                {
+                    if (colorL != null)
+                    {
+                        if (colorL[0] != null)
+                        {
+                            colorL[0].SetActive(true);
+                            colorL[0].GetComponentInChildren<Image>().color = current.leftControllerColor.Main;
+                            colorL[0].GetComponentInChildren<Text>().text = current.leftControllerColor.Main.ToString();
+                        }
+                        if (colorL[1] != null)
+                        {
+                            colorL[1].SetActive(true);
+                            colorL[1].GetComponentInChildren<Image>().color = current.leftControllerColor.Sub;
+                            colorL[1].GetComponentInChildren<Text>().text = current.leftControllerColor.Sub.ToString();
+                        }
+                    }
+                    if (colorR != null)
+                    {
+                        if (colorR[0] != null)
+                        {
+                            colorR[0].SetActive(true);
+                            colorR[0].GetComponentInChildren<Image>().color = current.rightControllerColor.Main;
+                            colorR[0].GetComponentInChildren<Text>().text = current.rightControllerColor.Main.ToString();
+                        }
+                        if (colorR[1] != null)
+                        {
+                            colorR[1].SetActive(true);
+                            colorR[1].GetComponentInChildren<Image>().color = current.rightControllerColor.Sub;
+                            colorR[1].GetComponentInChildren<Text>().text = current.rightControllerColor.Sub.ToString();
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var bar in colorL)
+                    {
+                        if (bar != null)
+                            bar.SetActive(false);
+                    }
+                    foreach (var bar in colorR)
+                    {
+                        if (bar != null)
+                            bar.SetActive(false);
+                    }
+                }
+            }
+        }
+
+        // Touchscreen
+        if (cursors != null && cursors.Length > 0)
+        {
+            var activeTouches = Touchscreen.current.activeTouches;
+
+            if (activeTouches.Count == 0)
+            {
+                foreach (var cursor in cursors)
+                    cursor.enabled = false;
+            }
+            else
+            {
+                int c = 0;
+
+                foreach (var activeTouch in activeTouches)
+                {
+                    var touch = activeTouch.ReadValue();
+                    var cursor = cursors[c];
+
+                    cursor.enabled = true;
+                    cursor.rectTransform.position = touch.position;
+
+                    if (++c >= cursors.Length)
+                        break;
+                }
+                while (c < cursors.Length)
+                {
+                    cursors[c++].enabled = false;
+                }
             }
         }
     }
