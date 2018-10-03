@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine.Experimental.Input.LowLevel;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine.Experimental.Input.Layouts;
 using UnityEngine.Experimental.Input.Utilities;
 
 namespace UnityEngine.Experimental.Input
@@ -20,8 +21,6 @@ namespace UnityEngine.Experimental.Input
     public class InputTestRuntime : IInputRuntime, IDisposable
     {
         public unsafe delegate long DeviceCommandCallback(int deviceId, InputDeviceCommand* command);
-
-        public const double kTimeIncrementPerUpdate = 0.1;
 
         ~InputTestRuntime()
         {
@@ -40,9 +39,6 @@ namespace UnityEngine.Experimental.Input
         {
             lock (m_Lock)
             {
-                // Advance time on every update. We choose an arbitrary amount here.
-                currentTime += kTimeIncrementPerUpdate;
-
                 if (m_NewDeviceDiscoveries != null && m_NewDeviceDiscoveries.Count > 0)
                 {
                     if (onDeviceDiscovered != null)
@@ -155,6 +151,11 @@ namespace UnityEngine.Experimental.Input
                 m_NewDeviceDiscoveries.Add(new KeyValuePair<int, string>(deviceId, deviceDescriptor));
                 return deviceId;
             }
+        }
+
+        public int ReportNewInputDevice(InputDeviceDescription description, int deviceId = InputDevice.kInvalidDeviceId)
+        {
+            return ReportNewInputDevice(description.ToJson(), deviceId);
         }
 
         public Action<InputUpdateType, int, IntPtr> onUpdate { get; set; }
