@@ -1,8 +1,20 @@
 // GENERATED AUTOMATICALLY FROM 'Assets/Demo/Switch/SwitchControls.inputactions'
 
-[System.Serializable]
-public class SwitchControls : UnityEngine.Experimental.Input.InputActionWrapper
+using System;
+using UnityEngine;
+using UnityEngine.Experimental.Input;
+
+
+[Serializable]
+public class SwitchControls : InputActionAssetReference
 {
+    public SwitchControls()
+    {
+    }
+    public SwitchControls(InputActionAsset asset)
+        : base(asset)
+    {
+    }
     private bool m_Initialized;
     private void Initialize()
     {
@@ -19,25 +31,48 @@ public class SwitchControls : UnityEngine.Experimental.Input.InputActionWrapper
         m_touchscreen_phase = m_touchscreen.GetAction("phase");
         m_Initialized = true;
     }
+    private void Uninitialize()
+    {
+        m_gameplay = null;
+        m_gameplay_attitude = null;
+        m_gameplay_acceleration = null;
+        m_gameplay_velocity = null;
+        m_gameplay_gyro = null;
+        m_touchscreen = null;
+        m_touchscreen_position = null;
+        m_touchscreen_id = null;
+        m_touchscreen_phase = null;
+        m_Initialized = false;
+    }
+    public void SwitchAsset(InputActionAsset newAsset)
+    {
+        if (newAsset == asset) return;
+        if (m_Initialized) Uninitialize();
+        asset = newAsset;
+    }
+    public void DuplicateAndSwitchAsset()
+    {
+        SwitchAsset(ScriptableObject.Instantiate(asset));
+    }
     // gameplay
-    private UnityEngine.Experimental.Input.InputActionMap m_gameplay;
-    private UnityEngine.Experimental.Input.InputAction m_gameplay_attitude;
-    private UnityEngine.Experimental.Input.InputAction m_gameplay_acceleration;
-    private UnityEngine.Experimental.Input.InputAction m_gameplay_velocity;
-    private UnityEngine.Experimental.Input.InputAction m_gameplay_gyro;
+    private InputActionMap m_gameplay;
+    private InputAction m_gameplay_attitude;
+    private InputAction m_gameplay_acceleration;
+    private InputAction m_gameplay_velocity;
+    private InputAction m_gameplay_gyro;
     public struct GameplayActions
     {
         private SwitchControls m_Wrapper;
         public GameplayActions(SwitchControls wrapper) { m_Wrapper = wrapper; }
-        public UnityEngine.Experimental.Input.InputAction @attitude { get { return m_Wrapper.m_gameplay_attitude; } }
-        public UnityEngine.Experimental.Input.InputAction @acceleration { get { return m_Wrapper.m_gameplay_acceleration; } }
-        public UnityEngine.Experimental.Input.InputAction @velocity { get { return m_Wrapper.m_gameplay_velocity; } }
-        public UnityEngine.Experimental.Input.InputAction @gyro { get { return m_Wrapper.m_gameplay_gyro; } }
-        public UnityEngine.Experimental.Input.InputActionMap Get() { return m_Wrapper.m_gameplay; }
+        public InputAction @attitude { get { return m_Wrapper.m_gameplay_attitude; } }
+        public InputAction @acceleration { get { return m_Wrapper.m_gameplay_acceleration; } }
+        public InputAction @velocity { get { return m_Wrapper.m_gameplay_velocity; } }
+        public InputAction @gyro { get { return m_Wrapper.m_gameplay_gyro; } }
+        public InputActionMap Get() { return m_Wrapper.m_gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
-        public UnityEngine.Experimental.Input.InputActionMap Clone() { return Get().Clone(); }
-        public static implicit operator UnityEngine.Experimental.Input.InputActionMap(GameplayActions set) { return set.Get(); }
+        public InputActionMap Clone() { return Get().Clone(); }
+        public static implicit operator InputActionMap(GameplayActions set) { return set.Get(); }
     }
     public GameplayActions @gameplay
     {
@@ -48,22 +83,22 @@ public class SwitchControls : UnityEngine.Experimental.Input.InputActionWrapper
         }
     }
     // touchscreen
-    private UnityEngine.Experimental.Input.InputActionMap m_touchscreen;
-    private UnityEngine.Experimental.Input.InputAction m_touchscreen_position;
-    private UnityEngine.Experimental.Input.InputAction m_touchscreen_id;
-    private UnityEngine.Experimental.Input.InputAction m_touchscreen_phase;
+    private InputActionMap m_touchscreen;
+    private InputAction m_touchscreen_position;
+    private InputAction m_touchscreen_id;
+    private InputAction m_touchscreen_phase;
     public struct TouchscreenActions
     {
         private SwitchControls m_Wrapper;
         public TouchscreenActions(SwitchControls wrapper) { m_Wrapper = wrapper; }
-        public UnityEngine.Experimental.Input.InputAction @position { get { return m_Wrapper.m_touchscreen_position; } }
-        public UnityEngine.Experimental.Input.InputAction @id { get { return m_Wrapper.m_touchscreen_id; } }
-        public UnityEngine.Experimental.Input.InputAction @phase { get { return m_Wrapper.m_touchscreen_phase; } }
-        public UnityEngine.Experimental.Input.InputActionMap Get() { return m_Wrapper.m_touchscreen; }
+        public InputAction @position { get { return m_Wrapper.m_touchscreen_position; } }
+        public InputAction @id { get { return m_Wrapper.m_touchscreen_id; } }
+        public InputAction @phase { get { return m_Wrapper.m_touchscreen_phase; } }
+        public InputActionMap Get() { return m_Wrapper.m_touchscreen; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
-        public UnityEngine.Experimental.Input.InputActionMap Clone() { return Get().Clone(); }
-        public static implicit operator UnityEngine.Experimental.Input.InputActionMap(TouchscreenActions set) { return set.Get(); }
+        public InputActionMap Clone() { return Get().Clone(); }
+        public static implicit operator InputActionMap(TouchscreenActions set) { return set.Get(); }
     }
     public TouchscreenActions @touchscreen
     {
