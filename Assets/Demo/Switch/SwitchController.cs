@@ -98,16 +98,23 @@ public class SwitchController : MonoBehaviour
                 if (current != null && (current.npadId != NPad.NpadId.Debug))
                 {
                     message.text += string.Format(
-                        "ID: {0}, NPadID: {1}, Orientation: {2}, Style: {3}\nTouch count: {4}",
-                        current.id, current.npadId, current.orientation, current.styleMask, Touchscreen.current.activeTouches.Count);
+                        "ID: {0}, NPadID: {1}, Orientation: {2}, Style: {3}\n",
+                        current.id, current.npadId, current.orientation, current.styleMask);
                 }
+            }
+
+            var touchscreen = InputSystem.GetDevice<Touchscreen>();
+
+            if (touchscreen != null)
+            {
+                message.text += string.Format("Touch count: {0}\n", touchscreen.activeTouches.Count);
             }
 
             if (all.Count > 0)
             {
                 NPad current = all[0] as NPad;
 
-                if (NPad.current != null)
+                if (current != null)
                 {
                     if (colorL != null)
                     {
@@ -159,31 +166,36 @@ public class SwitchController : MonoBehaviour
         // Touchscreen
         if (cursors != null && cursors.Length > 0)
         {
-            var activeTouches = Touchscreen.current.activeTouches;
+            var touchscreen = InputSystem.GetDevice<Touchscreen>();
 
-            if (activeTouches.Count == 0)
+            if (touchscreen != null)
             {
-                foreach (var cursor in cursors)
-                    cursor.enabled = false;
-            }
-            else
-            {
-                int c = 0;
+                var activeTouches = touchscreen.activeTouches;
 
-                foreach (var activeTouch in activeTouches)
+                if (activeTouches.Count == 0)
                 {
-                    var touch = activeTouch.ReadValue();
-                    var cursor = cursors[c];
-
-                    cursor.enabled = true;
-                    cursor.rectTransform.position = touch.position;
-
-                    if (++c >= cursors.Length)
-                        break;
+                    foreach (var cursor in cursors)
+                        cursor.enabled = false;
                 }
-                while (c < cursors.Length)
+                else
                 {
-                    cursors[c++].enabled = false;
+                    int c = 0;
+
+                    foreach (var activeTouch in activeTouches)
+                    {
+                        var touch = activeTouch.ReadValue();
+                        var cursor = cursors[c];
+
+                        cursor.enabled = true;
+                        cursor.rectTransform.position = touch.position;
+
+                        if (++c >= cursors.Length)
+                            break;
+                    }
+                    while (c < cursors.Length)
+                    {
+                        cursors[c++].enabled = false;
+                    }
                 }
             }
         }
