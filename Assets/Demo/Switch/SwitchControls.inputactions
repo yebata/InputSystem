@@ -1,1 +1,86 @@
-{"maps":[{"name":"gameplay","actions":[{"name":"attitude","expectedControlLayout":"","bindings":[]},{"name":"acceleration","expectedControlLayout":"","bindings":[]},{"name":"velocity","expectedControlLayout":"","bindings":[]},{"name":"gyro","expectedControlLayout":"","bindings":[]}],"bindings":[{"name":"","path":"<NPad>/attitude","interactions":"","processors":"","groups":"","action":"attitude","chainWithPrevious":false,"isComposite":false,"isPartOfComposite":false,"modifiers":""},{"name":"","path":"<NPad>/acceleration","interactions":"","processors":"","groups":"","action":"acceleration","chainWithPrevious":false,"isComposite":false,"isPartOfComposite":false,"modifiers":""},{"name":"","path":"<NPad>/angularVelocity","interactions":"","processors":"","groups":"","action":"velocity","chainWithPrevious":false,"isComposite":false,"isPartOfComposite":false,"modifiers":""},{"name":"","path":"<NPad>/rightShoulder","interactions":"Tap,SlowTap","processors":"","groups":"","action":"gyro","chainWithPrevious":false,"isComposite":false,"isPartOfComposite":false,"modifiers":""}]},{"name":"touchscreen","actions":[{"name":"position","expectedControlLayout":"","bindings":[]},{"name":"id","expectedControlLayout":"","bindings":[]},{"name":"phase","expectedControlLayout":"","bindings":[]}],"bindings":[{"name":"","path":"<Touchscreen>/position","interactions":"","processors":"","groups":"","action":"position","chainWithPrevious":false,"isComposite":false,"isPartOfComposite":false,"modifiers":""},{"name":"","path":"<Touchscreen>/pointerId","interactions":"","processors":"","groups":"","action":"id","chainWithPrevious":false,"isComposite":false,"isPartOfComposite":false,"modifiers":""},{"name":"","path":"<Touchscreen>/phase","interactions":"","processors":"","groups":"","action":"phase","chainWithPrevious":false,"isComposite":false,"isPartOfComposite":false,"modifiers":""}]}]}
+{
+    "name": "SwitchControls",
+    "maps": [
+        {
+            "name": "gameplay",
+            "id": "15a128bd-343d-496a-bb8c-41131a354d1c",
+            "actions": [
+                {
+                    "name": "attitude",
+                    "id": "abc6a040-2f1d-4a30-87ed-603eb047683a",
+                    "expectedControlLayout": "",
+                    "bindings": []
+                },
+                {
+                    "name": "acceleration",
+                    "id": "e5f3ca2d-8362-4764-9476-4ee51b82a92b",
+                    "expectedControlLayout": "",
+                    "bindings": []
+                },
+                {
+                    "name": "velocity",
+                    "id": "7967a71b-15f5-4bae-895e-0e2dedfd8492",
+                    "expectedControlLayout": "",
+                    "bindings": []
+                },
+                {
+                    "name": "gyro",
+                    "id": "d8bea78e-8041-47ae-a66c-f10cff5de3fa",
+                    "expectedControlLayout": "",
+                    "bindings": []
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "path": "<NPad>/attitude",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "attitude",
+                    "chainWithPrevious": false,
+                    "isComposite": false,
+                    "isPartOfComposite": false,
+                    "modifiers": ""
+                },
+                {
+                    "name": "",
+                    "path": "<NPad>/acceleration",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "acceleration",
+                    "chainWithPrevious": false,
+                    "isComposite": false,
+                    "isPartOfComposite": false,
+                    "modifiers": ""
+                },
+                {
+                    "name": "",
+                    "path": "<NPad>/angularVelocity",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "velocity",
+                    "chainWithPrevious": false,
+                    "isComposite": false,
+                    "isPartOfComposite": false,
+                    "modifiers": ""
+                },
+                {
+                    "name": "",
+                    "path": "<NPad>/rightShoulder",
+                    "interactions": "Tap,SlowTap",
+                    "processors": "",
+                    "groups": "",
+                    "action": "gyro",
+                    "chainWithPrevious": false,
+                    "isComposite": false,
+                    "isPartOfComposite": false,
+                    "modifiers": ""
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

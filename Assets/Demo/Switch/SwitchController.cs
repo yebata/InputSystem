@@ -36,8 +36,6 @@ public class SwitchController : MonoBehaviour
     private Vector3 m_Velocity;
 
     private int m_TouchID;
-    private PointerPhase m_TouchPhase;
-    private Vector2 m_TouchPosition;
 
     public void Awake()
     {
@@ -59,12 +57,6 @@ public class SwitchController : MonoBehaviour
                 m_IsGyroEnabled = !m_IsGyroEnabled;
             }
         };
-
-        controls.touchscreen.phase.performed += ctx =>
-        {
-            m_TouchPhase = ctx.ReadValue<PointerPhase>();
-        };
-        controls.touchscreen.position.performed += ctx => m_TouchPosition = ctx.ReadValue<Vector2>();
     }
 
     public void OnEnable()
@@ -106,8 +98,8 @@ public class SwitchController : MonoBehaviour
                 if (current != null && (current.npadId != NPad.NpadId.Debug))
                 {
                     message.text += string.Format(
-                        "ID: {0}, NPadID: {1}, Orientation: {2}, Style: {3}\n",
-                        current.id, current.npadId, current.orientation, current.styleMask);
+                        "ID: {0}, NPadID: {1}, Orientation: {2}, Style: {3}\nTouch count: {4}",
+                        current.id, current.npadId, current.orientation, current.styleMask, Touchscreen.current.activeTouches.Count);
                 }
             }
 
