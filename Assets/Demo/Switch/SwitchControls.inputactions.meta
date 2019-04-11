@@ -1,40 +1,14 @@
 fileFormatVersion: 2
-guid: 468d3fad913c19349a029ee215be8191
+guid: 5f0e25806d3b9b440810a929339fbe26
 ScriptedImporter:
-  fileIDToRecycleName:
-    11400000: <root>
-    11400002: gameplay/attitude
-    11400004: gameplay/acceleration
-    11400006: gameplay/velocity
-    11400008: gameplay/gyro
+  internalIDToNameTable: []
   externalObjects: {}
+  serializedVersion: 2
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-  script: {fileID: 11500000, guid: e2fdc6edf8744b38b702a2a5ee3541b2, type: 3}
+  script: {fileID: 11500000, guid: 8404be70184654265930450def6a9037, type: 3}
   generateWrapperCode: 1
-  wrapperCodePath: 
+  wrapperCodePath: Assets/Demo/Switch/SwitchControls.cs
   wrapperClassName: 
   wrapperCodeNamespace: 
-  generateActionEvents: 0
-  generateInterfaces: 0
-  actionGuids:
-  - name: gameplay/attitude
-    guid: abc6a040-2f1d-4a30-87ed-603eb047683a
-  - name: gameplay/acceleration
-    guid: e5f3ca2d-8362-4764-9476-4ee51b82a92b
-  - name: gameplay/velocity
-    guid: 7967a71b-15f5-4bae-895e-0e2dedfd8492
-  - name: gameplay/gyro
-    guid: d8bea78e-8041-47ae-a66c-f10cff5de3fa
-  - name: touchscreen/position
-    guid: cf0e0307-ea0a-4134-8ec5-49e742eac8ee
-  - name: touchscreen/id
-    guid: 152e25d5-985d-4224-a9f3-448ea9178928
-  - name: touchscreen/phase
-    guid: 5267228c-3a9e-4686-86fe-24d0ead4b10f
-  actionMapGuids:
-  - name: gameplay
-    guid: 15a128bd-343d-496a-bb8c-41131a354d1c
-  - name: touchscreen
-    guid: 6e89f523-48e4-48a3-8fb4-8303d55072f2

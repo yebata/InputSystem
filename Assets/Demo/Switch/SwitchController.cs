@@ -39,11 +39,11 @@ public class SwitchController : MonoBehaviour
 
     public void Awake()
     {
-        controls.gameplay.attitude.performed += ctx => m_Attitude = ctx.ReadValue<Quaternion>();
-        controls.gameplay.velocity.performed += ctx => m_Velocity = ctx.ReadValue<Vector3>();
-        controls.gameplay.acceleration.performed += ctx => m_Acceleration = ctx.ReadValue<Vector3>();
+        controls.gameplay.Attitude.performed += ctx => m_Attitude = ctx.ReadValue<Quaternion>();
+        controls.gameplay.Velocity.performed += ctx => m_Velocity = ctx.ReadValue<Vector3>();
+        controls.gameplay.Acceleration.performed += ctx => m_Acceleration = ctx.ReadValue<Vector3>();
 
-        controls.gameplay.gyro.performed += ctx =>
+        controls.gameplay.Gyro.performed += ctx =>
         {
             NPad npad = ctx.control.device as NPad;
 
