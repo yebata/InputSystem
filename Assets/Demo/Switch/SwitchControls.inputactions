@@ -12,7 +12,7 @@
                     "continuous": true,
                     "passThrough": false,
                     "initialStateCheck": false,
-                    "processors": "",
+                    "processors": "CompensateRotation",
                     "interactions": "",
                     "bindings": []
                 },
@@ -41,6 +41,28 @@
                 {
                     "name": "Gyro",
                     "id": "16c7932a-8f11-43c6-99ce-154bdf04aab5",
+                    "expectedControlLayout": "",
+                    "continuous": true,
+                    "passThrough": false,
+                    "initialStateCheck": false,
+                    "processors": "",
+                    "interactions": "",
+                    "bindings": []
+                },
+                {
+                    "name": "TouchScreen",
+                    "id": "7d2843f7-6976-434d-877f-3170b5e43c22",
+                    "expectedControlLayout": "Touch",
+                    "continuous": true,
+                    "passThrough": false,
+                    "initialStateCheck": false,
+                    "processors": "",
+                    "interactions": "",
+                    "bindings": []
+                },
+                {
+                    "name": "New action",
+                    "id": "544aec78-a6a1-4b4d-8567-ce0612755616",
                     "expectedControlLayout": "",
                     "continuous": true,
                     "passThrough": false,
@@ -86,9 +108,40 @@
                     "isComposite": false,
                     "isPartOfComposite": false,
                     "modifiers": ""
+                },
+                {
+                    "name": "",
+                    "id": "2b14ddbd-473b-4942-898c-a0f4e7500e15",
+                    "path": "<Touchscreen>/touch/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "TouchScreen",
+                    "isComposite": false,
+                    "isPartOfComposite": false,
+                    "modifiers": ""
+                },
+                {
+                    "name": "",
+                    "id": "7fd738cf-608f-4e4f-bd59-c41142ff4868",
+                    "path": "*/{Accept}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "New action",
+                    "isComposite": false,
+                    "isPartOfComposite": false,
+                    "modifiers": ""
                 }
             ]
         }
     ],
-    "controlSchemes": []
+    "controlSchemes": [
+        {
+            "name": "Gamepad",
+            "basedOn": "",
+            "bindingGroup": "Gamepad",
+            "devices": []
+        }
+    ]
 }

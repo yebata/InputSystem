@@ -26,7 +26,7 @@ public class SwitchControls : IInputActionCollection
                     ""continuous"": true,
                     ""passThrough"": false,
                     ""initialStateCheck"": false,
-                    ""processors"": """",
+                    ""processors"": ""CompensateRotation"",
                     ""interactions"": """",
                     ""bindings"": []
                 },
@@ -55,6 +55,28 @@ public class SwitchControls : IInputActionCollection
                 {
                     ""name"": ""Gyro"",
                     ""id"": ""16c7932a-8f11-43c6-99ce-154bdf04aab5"",
+                    ""expectedControlLayout"": """",
+                    ""continuous"": true,
+                    ""passThrough"": false,
+                    ""initialStateCheck"": false,
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""bindings"": []
+                },
+                {
+                    ""name"": ""TouchScreen"",
+                    ""id"": ""7d2843f7-6976-434d-877f-3170b5e43c22"",
+                    ""expectedControlLayout"": ""Touch"",
+                    ""continuous"": true,
+                    ""passThrough"": false,
+                    ""initialStateCheck"": false,
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""bindings"": []
+                },
+                {
+                    ""name"": ""New action"",
+                    ""id"": ""544aec78-a6a1-4b4d-8567-ce0612755616"",
                     ""expectedControlLayout"": """",
                     ""continuous"": true,
                     ""passThrough"": false,
@@ -100,11 +122,42 @@ public class SwitchControls : IInputActionCollection
                     ""isComposite"": false,
                     ""isPartOfComposite"": false,
                     ""modifiers"": """"
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""2b14ddbd-473b-4942-898c-a0f4e7500e15"",
+                    ""path"": ""<Touchscreen>/touch/position"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TouchScreen"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false,
+                    ""modifiers"": """"
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7fd738cf-608f-4e4f-bd59-c41142ff4868"",
+                    ""path"": ""*/{Accept}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""New action"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false,
+                    ""modifiers"": """"
                 }
             ]
         }
     ],
-    ""controlSchemes"": []
+    ""controlSchemes"": [
+        {
+            ""name"": ""Gamepad"",
+            ""basedOn"": """",
+            ""bindingGroup"": ""Gamepad"",
+            ""devices"": []
+        }
+    ]
 }");
         // gameplay
         m_gameplay = asset.GetActionMap("gameplay");
@@ -112,6 +165,8 @@ public class SwitchControls : IInputActionCollection
         m_gameplay_Acceleration = m_gameplay.GetAction("Acceleration");
         m_gameplay_Velocity = m_gameplay.GetAction("Velocity");
         m_gameplay_Gyro = m_gameplay.GetAction("Gyro");
+        m_gameplay_TouchScreen = m_gameplay.GetAction("TouchScreen");
+        m_gameplay_Newaction = m_gameplay.GetAction("New action");
     }
     ~SwitchControls()
     {
@@ -158,6 +213,8 @@ public class SwitchControls : IInputActionCollection
     private InputAction m_gameplay_Acceleration;
     private InputAction m_gameplay_Velocity;
     private InputAction m_gameplay_Gyro;
+    private InputAction m_gameplay_TouchScreen;
+    private InputAction m_gameplay_Newaction;
     public struct GameplayActions
     {
         private SwitchControls m_Wrapper;
@@ -166,6 +223,8 @@ public class SwitchControls : IInputActionCollection
         public InputAction @Acceleration { get { return m_Wrapper.m_gameplay_Acceleration; } }
         public InputAction @Velocity { get { return m_Wrapper.m_gameplay_Velocity; } }
         public InputAction @Gyro { get { return m_Wrapper.m_gameplay_Gyro; } }
+        public InputAction @TouchScreen { get { return m_Wrapper.m_gameplay_TouchScreen; } }
+        public InputAction @Newaction { get { return m_Wrapper.m_gameplay_Newaction; } }
         public InputActionMap Get() { return m_Wrapper.m_gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -188,6 +247,12 @@ public class SwitchControls : IInputActionCollection
                 Gyro.started -= m_Wrapper.m_GameplayActionsCallbackInterface.OnGyro;
                 Gyro.performed -= m_Wrapper.m_GameplayActionsCallbackInterface.OnGyro;
                 Gyro.cancelled -= m_Wrapper.m_GameplayActionsCallbackInterface.OnGyro;
+                TouchScreen.started -= m_Wrapper.m_GameplayActionsCallbackInterface.OnTouchScreen;
+                TouchScreen.performed -= m_Wrapper.m_GameplayActionsCallbackInterface.OnTouchScreen;
+                TouchScreen.cancelled -= m_Wrapper.m_GameplayActionsCallbackInterface.OnTouchScreen;
+                Newaction.started -= m_Wrapper.m_GameplayActionsCallbackInterface.OnNewaction;
+                Newaction.performed -= m_Wrapper.m_GameplayActionsCallbackInterface.OnNewaction;
+                Newaction.cancelled -= m_Wrapper.m_GameplayActionsCallbackInterface.OnNewaction;
             }
             m_Wrapper.m_GameplayActionsCallbackInterface = instance;
             if (instance != null)
@@ -204,6 +269,12 @@ public class SwitchControls : IInputActionCollection
                 Gyro.started += instance.OnGyro;
                 Gyro.performed += instance.OnGyro;
                 Gyro.cancelled += instance.OnGyro;
+                TouchScreen.started += instance.OnTouchScreen;
+                TouchScreen.performed += instance.OnTouchScreen;
+                TouchScreen.cancelled += instance.OnTouchScreen;
+                Newaction.started += instance.OnNewaction;
+                Newaction.performed += instance.OnNewaction;
+                Newaction.cancelled += instance.OnNewaction;
             }
         }
     }
@@ -214,11 +285,22 @@ public class SwitchControls : IInputActionCollection
             return new GameplayActions(this);
         }
     }
+    private int m_GamepadSchemeIndex = -1;
+    public InputControlScheme GamepadScheme
+    {
+        get
+        {
+            if (m_GamepadSchemeIndex == -1) m_GamepadSchemeIndex = asset.GetControlSchemeIndex("Gamepad");
+            return asset.controlSchemes[m_GamepadSchemeIndex];
+        }
+    }
     public interface IGameplayActions
     {
         void OnAttitude(InputAction.CallbackContext context);
         void OnAcceleration(InputAction.CallbackContext context);
         void OnVelocity(InputAction.CallbackContext context);
         void OnGyro(InputAction.CallbackContext context);
+        void OnTouchScreen(InputAction.CallbackContext context);
+        void OnNewaction(InputAction.CallbackContext context);
     }
 }
